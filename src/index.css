@@ -66,3 +66,21 @@ body {
 .goog-te-menu-value span:nth-child(n+2) {
     display: none !important; 
 }
+
+@keyframes marquee {
+  0% { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+
+.animate-marquee {
+  display: flex;
+  gap: 2rem;
+  animation: marquee 15s linear infinite;
+}
+
+.bg-grid-pattern {
+  background-color: #f3f4f6;
+  background-image: linear-gradient(#e5e7eb 1px, transparent 1px),
+  linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
+  background-size: 20px 20px;
+}

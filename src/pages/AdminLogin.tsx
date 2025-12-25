@@ -3,20 +3,30 @@ import { useNavigate } from 'react-router-dom';
 import { ShieldCheck } from 'lucide-react';
 import { NeoButton } from '../components/ui/NeoButton';
 import toast from 'react-hot-toast';
+import { auth } from '../firebase'; 
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const [adminId, setAdminId] = useState('');
+  const [email, setEmail] = useState(''); 
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (adminId === "enter_userid" && password === "enter_password") {
+    setLoading(true);
+
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      
       localStorage.setItem('isAdmin', 'true'); 
       toast.success("Welcome, Boss! 👑");
       navigate('/admin-dashboard');
-    } else {
-      toast.error("Invalid Credentials! 🚨");
+    } catch (error: any) {
+      console.error("Login Error:", error);
+      toast.error("Invalid Credentials or Network Error! 🚨");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -31,11 +41,11 @@ const AdminLogin = () => {
 
         <form onSubmit={handleLogin} className="space-y-4">
             <input 
-                type="text" 
-                placeholder="Admin ID" 
+                type="email" 
+                placeholder="Admin Email" 
                 className="w-full border-2 border-dark rounded-xl px-4 py-3 font-bold outline-none focus:bg-gray-50"
-                value={adminId}
-                onChange={(e) => setAdminId(e.target.value)}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
             />
             <input 
                 type="password" 
@@ -44,7 +54,9 @@ const AdminLogin = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
             />
-            <NeoButton className="w-full mt-4">Unlock Dashboard</NeoButton>
+            <NeoButton className="w-full mt-4" disabled={loading}>
+              {loading ? "Unlocking..." : "Unlock Dashboard"}
+            </NeoButton>
         </form>
       </div>
     </div>
