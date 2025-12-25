@@ -1,0 +1,68 @@
+@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  background-color: #FFFBEB; 
+  color: #171717;
+  font-family: 'Lexend', sans-serif;
+}
+
+#google_translate_element {
+    font-size: 0 !important;
+    color: transparent !important;
+}
+
+.goog-te-banner-frame {
+    display: none !important;
+}
+body {
+    top: 0px !important;
+}
+
+.goog-te-gadget {
+    font-size: 0 !important;
+    color: transparent !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+.goog-te-gadget-simple {
+    background-color: #ffffff !important;
+    border: 2px solid #000000 !important;
+    padding: 6px 12px !important;
+    border-radius: 8px !important;
+    font-size: 14px !important; 
+    font-weight: 800 !important;
+    color: #000000 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 3px 3px 0px 0px #000000 !important;
+    cursor: pointer !important;
+    height: 36px !important;
+    text-decoration: none !important;
+}
+
+.goog-te-gadget-simple:hover {
+    transform: translate(1px, 1px) !important;
+    box-shadow: 1px 1px 0px 0px #000000 !important;
+}
+
+.goog-te-gadget-icon, 
+.goog-te-gadget-simple img {
+    display: none !important;
+}
+
+.goog-te-menu-value {
+    margin: 0 !important;
+}
+.goog-te-menu-value span {
+    color: #000000 !important;
+    border: none !important;
+}
+.goog-te-menu-value span:nth-child(n+2) {
+    display: none !important; 
+}
