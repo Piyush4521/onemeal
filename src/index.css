@@ -84,3 +84,12 @@ body {
   linear-gradient(90deg, #e5e7eb 1px, transparent 1px);
   background-size: 20px 20px;
 }
+/* Hides the top banner pushed by Google */
+.goog-te-banner-frame.skiptranslate {
+    display: none !important;
+}
+
+/* Fixes the body shift caused by the banner */
+body {
+    top: 0px !important; 
+}

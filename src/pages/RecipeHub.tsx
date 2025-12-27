@@ -5,7 +5,7 @@ import { Link } from 'react-router-dom';
 import { NeoButton } from '../components/ui/NeoButton';
 import toast from 'react-hot-toast';
 
-const API_KEY = "YOUR_API_KEY_HERE";
+const API_KEY = "YOUR_GOOGLE_GEMINI_API_KEY_HERE";
 
 const FOOD_FACTS = [
   "🍯 Honey never spoils! Archaeologists have found edible honey in ancient Egyptian tombs over 3,000 years old.",

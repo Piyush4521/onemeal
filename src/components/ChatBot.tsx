@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Bot } from 'lucide-react';
 import { NeoButton } from './ui/NeoButton';
 
-const API_KEY = "YOUR_API_KEY_HERE"; 
+const API_KEY = "YOUR_GOOGLE_GEMINI_API_KEY_HERE";
 
 type Message = {
   id: number;
@@ -21,13 +21,17 @@ export const ChatBot = () => {
   ]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     const fetchModel = async () => {
+        if (!API_KEY) {
+            console.error("API Key is missing! Check .env file.");
+            return;
+        }
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`);
             const data = await res.json();
             
-          
             const validModel = data.models?.find((m: any) => 
                 m.supportedGenerationMethods?.includes("generateContent") && 
                 !m.name.includes("vision")
@@ -138,7 +142,7 @@ export const ChatBot = () => {
               </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-bg scroll-smooth">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-yellow-50 scroll-smooth">
               {messages.map((msg) => (
                 <div 
                   key={msg.id} 
@@ -146,7 +150,7 @@ export const ChatBot = () => {
                 >
                   <div className={`
                     max-w-[80%] p-3 rounded-xl border-2 border-dark font-bold text-sm shadow-[2px_2px_0px_0px_rgba(0,0,0,1)]
-                    ${msg.sender === 'user' ? 'bg-white text-dark rounded-br-none' : 'bg-secondary text-dark rounded-bl-none'}
+                    ${msg.sender === 'user' ? 'bg-white text-dark rounded-br-none' : 'bg-white text-dark rounded-bl-none'}
                   `}>
                     {msg.text}
                   </div>

@@ -5,36 +5,55 @@ import { Link, useNavigate } from 'react-router-dom';
 import { NeoButton } from '../components/ui/NeoButton';
 import { auth, googleProvider, db } from '../firebase'; 
 import { signInWithPopup } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore'; 
+import { doc, setDoc, getDoc } from 'firebase/firestore'; 
 import toast from 'react-hot-toast';
 
 const LoginPage = () => {
   const [selectedRole, setSelectedRole] = useState<'donor' | 'receiver' | null>(null);
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleLogin = async () => {
     if (!selectedRole) {
-      toast.error("Please select a role first! (Donor or NGO)");
+      toast.error("Arre! Pehle Role toh select karo (Donor ya NGO?)", {
+        icon: '🤔'
+      });
       return;
     }
+
+    setLoading(true);
 
     try {
       const result = await signInWithPopup(auth, googleProvider);
       const user = result.user;
-      
       const userRef = doc(db, "users", user.uid);
-      const userData = {
-        uid: user.uid,
-        name: user.displayName,
-        email: user.email,
-        role: selectedRole,
-        lastLogin: new Date()
-      };
-      await setDoc(userRef, userData, { merge: true });
+      const userSnap = await getDoc(userRef);
+      let finalRole = selectedRole;
+      if (userSnap.exists()) {
+        const data = userSnap.data();
+        finalRole = data.role;
+        
+        await setDoc(userRef, { lastLogin: new Date() }, { merge: true });
 
-      toast.success(`Welcome to OneMeal, ${user.displayName}!`);
-      
-      if (selectedRole === 'donor') {
+        if (finalRole !== selectedRole) {
+            toast(`Welcome back! Aap pehle se ${finalRole} hain, wahi Dashboard khul raha hai.`, { icon: '✅' });
+        } else {
+            toast.success(`Swagat hai wapis, ${user.displayName}!`);
+        }
+
+      } else {
+        const userData = {
+          uid: user.uid,
+          name: user.displayName,
+          email: user.email,
+          role: selectedRole,
+          lastLogin: new Date(),
+          createdAt: new Date()
+        };
+        await setDoc(userRef, userData, { merge: true });
+        toast.success(`OneMeal par swagat hai, ${user.displayName}!`);
+      }
+        if (finalRole === 'donor') {
         navigate('/donor');
       } else {
         navigate('/receiver');
@@ -42,15 +61,17 @@ const LoginPage = () => {
 
     } catch (error: any) {
       console.error(error);
-      toast.error("Login Failed: " + error.message);
+      toast.error("Login nahi ho paya: " + error.message);
+    } finally {
+        setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-bg p-6 flex flex-col items-center justify-center relative overflow-hidden">
-      
       <div className="absolute top-[-10%] right-[-10%] w-96 h-96 bg-primary rounded-full border-4 border-dark opacity-20 -z-0"></div>
       <div className="absolute bottom-[-10%] left-[-10%] w-96 h-96 bg-secondary rounded-full border-4 border-dark opacity-20 -z-0"></div>
+      
       <Link to="/" className="absolute top-6 left-6 z-50">
         <NeoButton variant="secondary" className="px-3 py-2">
           <ArrowLeft size={20} /> Back
@@ -105,8 +126,12 @@ const LoginPage = () => {
             animate={{ opacity: 1, y: 0 }}
             className="max-w-md mx-auto"
           >
-            <NeoButton onClick={handleLogin} className="w-full py-4 text-xl flex items-center justify-center gap-3">
-              <LogIn /> Login with Google
+            <NeoButton 
+                onClick={handleLogin} 
+                disabled={loading}
+                className="w-full py-4 text-xl flex items-center justify-center gap-3"
+            >
+              {loading ? "Verifying..." : <><LogIn /> Login with Google</>}
             </NeoButton>
             <p className="mt-4 font-bold text-gray-500 text-sm">
               Logging in as <span className="uppercase text-primary">{selectedRole}</span>

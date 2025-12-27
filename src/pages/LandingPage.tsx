@@ -18,11 +18,13 @@ const LandingPage = () => {
   const [user, setUser] = useState<User | null>(null);
   const [leaderboard, setLeaderboard] = useState<any[]>([]);
   const [announcement, setAnnouncement] = useState<string>("");
+  const [totalImpact, setTotalImpact] = useState(0); 
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
@@ -36,18 +38,22 @@ const LandingPage = () => {
         else setAnnouncement("");
     });
 
-    const fetchLeaderboard = async () => {
+    const fetchStats = async () => {
         try {
             const q = query(collection(db, "donations"), where("status", "==", "completed"));
             const snapshot = await getDocs(q);
             const stats: any = {};
+            let count = 0;
             
             snapshot.forEach(doc => {
+                count++; 
                 const d = doc.data();
                 if(d.donorName) {
                     stats[d.donorName] = (stats[d.donorName] || 0) + 10;
                 }
             });
+
+            setTotalImpact(count);
 
             const sorted = Object.keys(stats).map(name => ({
                 name, 
@@ -58,7 +64,8 @@ const LandingPage = () => {
             setLeaderboard(sorted);
         } catch(e) { console.error(e); }
     }
-    fetchLeaderboard();
+    fetchStats();
+    
     return () => unsubAnnounce();
   }, []);
 
@@ -192,7 +199,7 @@ const LandingPage = () => {
                 <div>
                     <div className="text-xs font-bold text-gray-500 uppercase tracking-wide">Live Impact</div>
                     <div className="font-black text-xl flex items-center gap-2">
-                        240+ Meals Saved <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
+                        {totalImpact > 0 ? totalImpact : "240+"} Donations <span className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
                     </div>
                 </div>
             </div>
@@ -239,9 +246,15 @@ const LandingPage = () => {
                             </div>
                         </div>
                     </motion.div>
-                )) : (
-                    <p className="col-span-3 text-gray-500 font-bold py-10">Loading Heroes...</p>
-                )}
+                )) 
+                  : (
+                        <div className="col-span-3 text-center py-10">
+                        <p className="text-gray-500 font-bold animate-pulse text-xl">
+                           Asli Heroes load ho rahe hain... ⏳
+                        </p>
+                        <p className="text-sm text-gray-400">Sabra ka phal metha hota hai!</p>
+                        </div>
+               )}
             </div>
         </div>
       </section>
@@ -257,7 +270,6 @@ const LandingPage = () => {
           </p>
         </div>
       </section>
-
       <section id="about" className="py-20 px-4 bg-secondary/10 border-b-2 border-dark relative z-20">
         <div className="max-w-4xl mx-auto">
           <div className="flex flex-col md:flex-row gap-12 items-center">
@@ -284,7 +296,6 @@ const LandingPage = () => {
           </div>
         </div>
       </section>
-
       <footer id="contact" className="bg-dark text-bg py-16 px-4 relative z-20">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-4xl font-black mb-8 text-white">Contact Us 📞</h2>

@@ -19,8 +19,7 @@ let DefaultIcon = L.icon({
     iconAnchor: [12, 41]
 });
 L.Marker.prototype.options.icon = DefaultIcon;
-
-const API_KEY = "YOUR_API_KEY_HERE";
+const API_KEY = "YOUR_GOOGLE_GEMINI_API_KEY_HERE"; 
 const DonorDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
@@ -80,6 +79,7 @@ const DonorDashboard = () => {
         }
     );
   };
+
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -88,6 +88,7 @@ const DonorDashboard = () => {
         setIsVerified(false); 
     }
   };
+
   const verifyFoodWithAI = async () => {
       if (!imageFile) {
           toast.error("Please take a photo first!");
@@ -248,7 +249,7 @@ const DonorDashboard = () => {
         setAddress(`Map Pin: ${e.latlng.lat.toFixed(4)}, ${e.latlng.lng.toFixed(4)}`);
       },
     });
-    return position === null ? null : <Marker position={position}><Popup>Location</Popup></Marker>;
+    return position === null ? null : <Marker position={position}><Popup>Selected Location</Popup></Marker>;
   }
 
   const completedCount = donations.filter(d => d.status === 'completed').length;
@@ -377,13 +378,19 @@ const DonorDashboard = () => {
             </NeoButton>
           </form>
         </motion.div>
+        
         <div className="space-y-8">
             <motion.div initial={{ x: 20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} className="bg-white border-4 border-dark rounded-3xl overflow-hidden shadow-neo h-80 relative z-0">
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-100 -z-10"><p>Loading Map...</p></div>
-                <MapContainer center={location ? [location.lat, location.lng] : [20.5937, 78.9629]} zoom={location ? 15 : 5} style={{ height: "100%", width: "100%" }}>
-                    <TileLayer attribution='© OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                    <LocationMarker />
-                </MapContainer>
+                {!location ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
+                        <p className="font-bold text-gray-500 animate-pulse">Detecting Location...</p>
+                    </div>
+                ) : (
+                    <MapContainer center={[location.lat, location.lng]} zoom={15} style={{ height: "100%", width: "100%" }}>
+                        <TileLayer attribution='© OpenStreetMap' url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                        <LocationMarker />
+                    </MapContainer>
+                )}
             </motion.div>
 
             <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="bg-white border-4 border-dark rounded-3xl p-6 shadow-neo">

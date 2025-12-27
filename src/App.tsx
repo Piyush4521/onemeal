@@ -30,6 +30,30 @@ const ProtectedRoute = ({ children }: { children: JSX.Element }) => {
   if (!user) { return <Navigate to="/login" />; }
   return children;
 };
+const AdminRoute = ({ children }: { children: JSX.Element }) => {
+  const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (currentUser) {
+        try {
+           const userRef = doc(db, "users", currentUser.uid);
+           const userSnap = await getDoc(userRef);
+           if (userSnap.exists() && userSnap.data().role === 'admin') {
+             setIsAdmin(true);
+           }
+        } catch (e) { console.error("Error verifying admin:", e); }
+      }
+      setLoading(false);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  if (loading) return null;
+  if (!isAdmin) { return <Navigate to="/admin" />; }
+  return children;
+};
 
 const LoginGuard = ({ children }: { children: JSX.Element }) => {
   const [loading, setLoading] = useState(true);
@@ -81,12 +105,18 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/recipes" element={<RecipeHub />} />
           <Route path="/admin" element={<AdminLogin />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
+          <Route path="/admin-dashboard" element={
+            <AdminRoute>
+              <AdminDashboard />
+            </AdminRoute>
+          } />
+
           <Route path="/login" element={
             <LoginGuard>
               <LoginPage />
             </LoginGuard>
           } />
+          
           <Route path="/donor" element={
             <ProtectedRoute>
               <DonorDashboard />

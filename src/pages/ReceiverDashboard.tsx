@@ -1,12 +1,12 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Navigation, Clock, Phone, AlertCircle, RefreshCw } from 'lucide-react';
+import { MapPin, Navigation, Clock, Phone, AlertCircle, RefreshCw, ArrowRight } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { NeoButton } from '../components/ui/NeoButton';
 import { db, auth } from '../firebase';
 import { collection, query, where, onSnapshot, doc, updateDoc } from 'firebase/firestore';
 import toast from 'react-hot-toast';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import icon from 'leaflet/dist/images/marker-icon.png';
@@ -39,7 +39,7 @@ const FoodIcon = new L.Icon({
 });
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
-    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    if (!lat1 || !lon1 || !lat2 || !lon2) return 9999;
     const R = 6371; 
     const dLat = (lat2 - lat1) * (Math.PI / 180);
     const dLon = (lon2 - lon1) * (Math.PI / 180);
@@ -47,13 +47,23 @@ const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: numbe
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(lat1 * (Math.PI / 180)) * Math.cos(lat2 * (Math.PI / 180)) * Math.sin(dLon / 2) * Math.sin(dLon / 2); 
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)); 
-    return (R * c).toFixed(1); 
+    return Number((R * c).toFixed(1)); 
 };
+function MapUpdater({ center }: { center: { lat: number, lng: number } | null }) {
+    const map = useMap();
+    useEffect(() => {
+        if (center) {
+            map.flyTo([center.lat, center.lng], 14, { animate: true });
+        }
+    }, [center, map]);
+    return null;
+}
 
 const ReceiverDashboard = () => {
   const [donations, setDonations] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [ngoLocation, setNgoLocation] = useState<{lat: number, lng: number} | null>(null);
+  const [selectedDonation, setSelectedDonation] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -90,6 +100,13 @@ const ReceiverDashboard = () => {
 
     return () => unsubscribe();
   }, []);
+  const sortedDonations = useMemo(() => {
+      if (!ngoLocation) return donations;
+      return [...donations].map(item => ({
+          ...item,
+          distance: item.location ? calculateDistance(ngoLocation.lat, ngoLocation.lng, item.location.lat, item.location.lng) : 9999
+      })).sort((a, b) => a.distance - b.distance);
+  }, [donations, ngoLocation]);
 
   const handleLogout = () => {
     auth.signOut();
@@ -114,14 +131,14 @@ const ReceiverDashboard = () => {
 
       <div className="flex flex-1 overflow-hidden flex-col md:flex-row">
         
-        <div className="w-full md:w-1/3 p-6 overflow-y-auto bg-yellow-50 border-r-2 border-dark custom-scrollbar">
+        <div className="w-full md:w-1/3 p-6 overflow-y-auto bg-yellow-50 border-r-2 border-dark custom-scrollbar scroll-smooth">
           <h2 className="text-2xl font-black mb-6 flex items-center gap-2">
-            Available Food 🥘 <span className="text-sm bg-dark text-white px-2 rounded-full">{donations.length}</span>
+            Available Food 🥘 <span className="text-sm bg-dark text-white px-2 rounded-full">{sortedDonations.length}</span>
           </h2>
           
           {loading ? (
              <p className="font-bold text-gray-500 animate-pulse">Scanning nearby donors...</p>
-          ) : donations.length === 0 ? (
+          ) : sortedDonations.length === 0 ? (
              <div className="text-center p-8 border-2 border-dashed border-gray-400 rounded-xl">
                 <AlertCircle className="mx-auto mb-2 text-gray-400" size={32} />
                 <p className="font-bold text-gray-500">No food available right now.</p>
@@ -129,8 +146,14 @@ const ReceiverDashboard = () => {
              </div>
           ) : (
              <div className="space-y-4">
-               {donations.map((food) => (
-                 <FoodCard key={food.id} data={food} ngoLocation={ngoLocation} />
+               {sortedDonations.map((food) => (
+                 <FoodCard 
+                    key={food.id} 
+                    data={food} 
+                    ngoLocation={ngoLocation}
+                    isSelected={selectedDonation === food.id}
+                    onFocus={() => setSelectedDonation(food.id)}
+                 />
                ))}
              </div>
           )}
@@ -155,30 +178,24 @@ const ReceiverDashboard = () => {
                 />
 
                 <Marker position={[ngoLocation.lat, ngoLocation.lng]} icon={UserIcon}>
-                    <Popup>
-                        <b>You are here</b> <br/> Ready to collect!
-                    </Popup>
+                    <Popup><b>You are here</b></Popup>
                 </Marker>
 
-                {donations.map((food) => {
+                {sortedDonations.map((food) => {
                     if(food.location && food.location.lat) {
-                        const dist = calculateDistance(
-                            ngoLocation.lat, ngoLocation.lng, 
-                            food.location.lat, food.location.lng
-                        );
                         return (
                             <Marker 
                                 key={food.id} 
                                 position={[food.location.lat, food.location.lng]}
                                 icon={FoodIcon}
+                                eventHandlers={{
+                                    click: () => setSelectedDonation(food.id),
+                                }}
                             >
                                 <Popup>
                                     <div className="p-1">
                                         <h3 className="font-bold text-sm">{food.foodItem}</h3>
                                         <p className="text-xs">Qty: {food.quantity}</p>
-                                        <p className="text-xs font-bold text-green-600 mt-1">
-                                            {dist} km away
-                                        </p>
                                     </div>
                                 </Popup>
                             </Marker>
@@ -186,6 +203,10 @@ const ReceiverDashboard = () => {
                     }
                     return null;
                 })}
+                {selectedDonation && (() => {
+                    const target = sortedDonations.find(d => d.id === selectedDonation);
+                    return target?.location ? <MapUpdater center={target.location} /> : null;
+                })()}
 
               </MapContainer>
           )}
@@ -204,9 +225,15 @@ const ReceiverDashboard = () => {
   );
 };
 
-const FoodCard = ({ data, ngoLocation }: any) => {
+const FoodCard = ({ data, ngoLocation, isSelected, onFocus }: any) => {
   const [claimed, setClaimed] = useState(false);
   const [reporting, setReporting] = useState(false); 
+  const cardRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (isSelected && cardRef.current) {
+        cardRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }, [isSelected]);
 
   const distance = (data.location && ngoLocation) 
     ? calculateDistance(ngoLocation.lat, ngoLocation.lng, data.location.lat, data.location.lng)
@@ -256,13 +283,28 @@ const FoodCard = ({ data, ngoLocation }: any) => {
           setReporting(false);
       }
   };
+  const openGoogleMaps = () => {
+      if(data.location) {
+          const url = `https://www.google.com/maps/dir/?api=1&destination=${data.location.lat},${data.location.lng}`;
+          window.open(url, '_blank');
+      } else {
+          toast.error("No GPS coordinates for this donation.");
+      }
+  };
 
   return (
     <motion.div 
+        ref={cardRef}
+        onClick={onFocus}
         layout
         initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white border-2 border-dark rounded-xl p-4 shadow-neo relative overflow-hidden"
+        animate={{ 
+            scale: isSelected ? 1.02 : 1, 
+            opacity: 1,
+            borderColor: isSelected ? '#000' : '#171717',
+            backgroundColor: isSelected ? '#ffffff' : '#ffffff' 
+        }}
+        className={`bg-white border-2 rounded-xl p-4 shadow-neo relative overflow-hidden cursor-pointer ${isSelected ? 'ring-2 ring-blue-400' : 'border-dark'}`}
     >
       {distance && (
           <div className="absolute top-0 left-0 bg-yellow-300 text-xs font-black px-2 py-1 border-r-2 border-b-2 border-dark rounded-br-lg z-10">
@@ -287,28 +329,35 @@ const FoodCard = ({ data, ngoLocation }: any) => {
         <span className="flex items-center gap-1"><Clock size={14} /> {getTimeAgo(data.createdAt)}</span>
       </div>
       
-      <div className="grid grid-cols-5 gap-2">
+      <div className="grid grid-cols-6 gap-2">
           {data.phone && (
-             <a href={`tel:${data.phone}`} className="col-span-1 bg-white border-2 border-dark rounded-lg flex items-center justify-center hover:bg-gray-100">
+             <a href={`tel:${data.phone}`} onClick={(e) => e.stopPropagation()} className="col-span-1 bg-white border-2 border-dark rounded-lg flex items-center justify-center hover:bg-gray-100 h-10">
                 <Phone size={20} />
              </a>
           )}
-          
           <button 
-            onClick={handleReport}
+             onClick={(e) => { e.stopPropagation(); openGoogleMaps(); }} 
+             className="col-span-1 bg-blue-100 border-2 border-blue-600 text-blue-700 rounded-lg flex items-center justify-center hover:bg-blue-200 h-10"
+             title="Navigate"
+          >
+             <Navigation size={20} />
+          </button>
+
+          <button 
+            onClick={(e) => { e.stopPropagation(); handleReport(); }}
             disabled={reporting || claimed}
-            className="col-span-1 bg-red-100 border-2 border-red-500 text-red-600 rounded-lg flex items-center justify-center hover:bg-red-200"
+            className="col-span-1 bg-red-100 border-2 border-red-500 text-red-600 rounded-lg flex items-center justify-center hover:bg-red-200 h-10"
             title="Report Fake/Missing"
           >
             <AlertCircle size={20} />
           </button>
           
           <NeoButton 
-            onClick={handleClaim} 
+            onClick={(e) => { e.stopPropagation(); handleClaim(); }} 
             disabled={claimed || reporting}
-            className={`col-span-3 w-full text-sm py-2 flex items-center justify-center gap-2 ${claimed ? 'bg-gray-300 border-gray-500 text-gray-600 shadow-none' : ''}`}
+            className={`col-span-3 w-full text-sm py-2 flex items-center justify-center gap-2 h-10 ${claimed ? 'bg-gray-300 border-gray-500 text-gray-600 shadow-none' : ''}`}
           >
-            {claimed ? 'Claimed' : 'Claim ✋'}
+            {claimed ? 'Claimed' : <>Claim <ArrowRight size={16}/></>}
           </NeoButton>
       </div>
     </motion.div>

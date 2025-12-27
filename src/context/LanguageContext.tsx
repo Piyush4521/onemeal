@@ -1,5 +1,4 @@
 import { createContext, useState, useContext, type ReactNode } from 'react';
-
 const translations = {
   en: {
     nav_home: "Home",
@@ -52,7 +51,7 @@ const translations = {
     loading: "लोड हो रहा है...",
     donate_title: "भोजन दान करें",
     live_badge: "लाइव",
-    cam_btn: "ताज़ा फोटो लें",
+    cam_btn: "ताज़ा फोटो लें",
     cam_sub: "(AI जांच के लिए जरूरी)",
     item_lbl: "क्या खाना है?",
     item_ph: "जैसे: 50 रोटी, दाल",
@@ -100,6 +99,7 @@ const translations = {
 };
 
 type Language = 'en' | 'hi' | 'mr';
+
 type LanguageContextType = {
   language: Language;
   setLanguage: (lang: Language) => void;
@@ -109,7 +109,15 @@ type LanguageContextType = {
 const LanguageContext = createContext<LanguageContextType | undefined>(undefined);
 
 export const LanguageProvider = ({ children }: { children: ReactNode }) => {
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguageState] = useState<Language>(() => {
+    const saved = localStorage.getItem('onemeal_lang');
+    return (saved === 'hi' || saved === 'mr' || saved === 'en') ? (saved as Language) : 'en';
+  });
+
+  const setLanguage = (lang: Language) => {
+    setLanguageState(lang);
+    localStorage.setItem('onemeal_lang', lang);
+  };
 
   return (
     <LanguageContext.Provider value={{ language, setLanguage, t: translations[language] }}>
@@ -117,6 +125,7 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     </LanguageContext.Provider>
   );
 };
+
 export const useLanguage = () => {
   const context = useContext(LanguageContext);
   if (!context) throw new Error("useLanguage must be used within a LanguageProvider");
