@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X, Send, Bot } from 'lucide-react';
 import { NeoButton } from './ui/NeoButton';
 
-const API_KEY = "import.meta.env.VITE_GEMINI_API_KEY"; 
+const API_KEY = "YOUR_API_KEY_HERE"; 
 
 type Message = {
   id: number;
@@ -15,11 +15,35 @@ export const ChatBot = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [activeModel, setActiveModel] = useState("gemini-pro"); 
   const [messages, setMessages] = useState<Message[]>([
     { id: 1, text: "Namaste! 🙏 Main OneMeal AI hu. Kaise madad karu? (Recipes ya Donation?)", sender: 'bot' }
   ]);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const fetchModel = async () => {
+        try {
+            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`);
+            const data = await res.json();
+            
+          
+            const validModel = data.models?.find((m: any) => 
+                m.supportedGenerationMethods?.includes("generateContent") && 
+                !m.name.includes("vision")
+            );
+
+            if (validModel) {
+                const cleanName = validModel.name.replace("models/", "");
+                console.log("✅ Connected to Model:", cleanName);
+                setActiveModel(cleanName);
+            }
+        } catch (e) {
+            console.error("Model check failed, using default.");
+        }
+    };
+    fetchModel();
+  }, []); 
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -27,29 +51,12 @@ export const ChatBot = () => {
 
   const callGeminiAI = async (userText: string) => {
     try {
-
-        const modelsResponse = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${API_KEY}`);
-        const modelsData = await modelsResponse.json();
-        
-        if (modelsData.error) throw new Error(modelsData.error.message);
-        const validModel = modelsData.models?.find((m: any) => 
-            m.supportedGenerationMethods?.includes("generateContent") && !m.name.includes("vision")
-        );
-
-        if (!validModel) throw new Error("No text model found.");
-        const modelName = validModel.name.replace("models/", "");
-
-        const systemPrompt = `You are a helpful assistant for 'OneMeal', a food donation website connecting donors (hotels) to NGOs. 
+        const systemPrompt = `You are a helpful assistant for 'OneMeal'. 
         User said: "${userText}". 
-        Rules:
-        1. Keep answers short (max 2 sentences).
-        2. Use Hinglish (Hindi+English) + Emojis.
-        3. If asked about recipes, give a 1-line suggestion.
-        4. If asked about donation, say "Login as Donor to list food".
-        5. Be funny and polite.`;
+        Rules: Keep answers short (max 2 sentences). Use Hinglish + Emojis.`;
 
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${API_KEY}`,
+            `https://generativelanguage.googleapis.com/v1beta/models/${activeModel}:generateContent?key=${API_KEY}`,
             {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -59,15 +66,21 @@ export const ChatBot = () => {
 
         const data = await response.json();
         
+        if (!response.ok) {
+            console.error("Gemini API Error:", data);
+            if(data.error?.code === 429) return "Quota khatam! 1 min ruko. ⏳";
+            return "Server issue. Try again later! 😅";
+        }
+
         if (data.candidates && data.candidates[0].content) {
             return data.candidates[0].content.parts[0].text;
         } else {
-            return "Server thoda busy hai, baad mein try karna! 😅";
+            return "Samajh nahi aaya. Phir se bolo? 🤔";
         }
 
     } catch (error) {
         console.error("AI Error:", error);
-        return "Oops! Dimag nahi chal raha. Net check karo? 🥶";
+        return "Oops! Net check karo? 🥶";
     }
   };
 
@@ -88,8 +101,6 @@ export const ChatBot = () => {
 
   return (
     <div className="fixed bottom-6 right-6 z-50 font-sans">
-      
-      {/*Toggle Button*/}
       <AnimatePresence>
         {!isOpen && (
           <motion.button
@@ -107,7 +118,6 @@ export const ChatBot = () => {
         )}
       </AnimatePresence>
 
-      {/*Chat*/}
       <AnimatePresence>
         {isOpen && (
           <motion.div
@@ -116,8 +126,6 @@ export const ChatBot = () => {
             exit={{ opacity: 0, y: 50, scale: 0.9 }}
             className="bg-white border-4 border-dark rounded-2xl shadow-neo w-[90vw] md:w-96 h-[500px] flex flex-col overflow-hidden"
           >
-            
-            {/* Header */}
             <div className="bg-primary p-4 border-b-4 border-dark flex justify-between items-center">
               <div className="flex items-center gap-2">
                 <div className="bg-white p-1 rounded-full border-2 border-dark">
@@ -130,7 +138,6 @@ export const ChatBot = () => {
               </button>
             </div>
 
-            {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-bg scroll-smooth">
               {messages.map((msg) => (
                 <div 
@@ -145,8 +152,6 @@ export const ChatBot = () => {
                   </div>
                 </div>
               ))}
-              
-              {/* Typing Indicator */}
               {isTyping && (
                 <div className="flex justify-start">
                   <div className="bg-gray-200 border-2 border-dark p-3 rounded-xl rounded-bl-none flex gap-1 items-center">
@@ -159,7 +164,6 @@ export const ChatBot = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Input Area */}
             <div className="p-4 border-t-4 border-dark bg-white flex gap-2">
               <input
                 type="text"
@@ -173,7 +177,6 @@ export const ChatBot = () => {
                 <Send size={20} />
               </NeoButton>
             </div>
-
           </motion.div>
         )}
       </AnimatePresence>

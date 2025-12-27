@@ -5,9 +5,19 @@ import { Link } from 'react-router-dom';
 import { NeoButton } from '../components/ui/NeoButton';
 import toast from 'react-hot-toast';
 
-const API_KEY = "import.meta.env.VITE_GEMINI_API_KEY"; 
+const API_KEY = "YOUR_API_KEY_HERE";
 
 const FOOD_FACTS = [
+  "🍯 Honey never spoils! Archaeologists have found edible honey in ancient Egyptian tombs over 3,000 years old.",
+  "🍌 Don't toss brown bananas! They are perfect for baking banana bread or freezing for smoothies.",
+  "❄️ You can freeze almost anything—including milk, cheese, and cracked eggs—to make them last for months.",
+  "🥦 Broccoli stalks have more calcium and Vitamin C than the florets. Chop them up for stir-frys!",
+  "📅 'Best Before' is about quality, not safety. Most food is still safe to eat after this date (unlike 'Use By').",
+  "🌱 You can regrow vegetables like green onions, lettuce, and celery just by placing their roots in water.",
+  "🍞 Stale bread isn't trash! It makes the best French Toast, breadcrumbs, or crunchy croutons.",
+  "🥔 Potato skins hold most of the fiber and nutrients. Scrub them clean and leave them on!",
+  "☕ Used coffee grounds are rich in nitrogen—sprinkle them in your garden to help plants grow faster.",
+  "🌍 Wasting food produces methane, a greenhouse gas 25x more potent than CO2. Saving food saves the planet!", 
   "🍯 Honey kabhi kharab nahi hota. 3000 saal purana honey bhi kha sakte ho!",
   "🍓 Strawberries berry nahi hai, par Kela (Banana) ek berry hai! Shocking?",
   "🥕 Pehle Gajar (Carrots) purple color ke hote the, orange nahi.",
@@ -23,6 +33,11 @@ const LOADING_JOKES = [
     "🧂 Namak shamak daal rahe hai...",
     "🤔 Soch raha hu kya banau...",
     "🍛 Masala koot raha hu...",
+    "🥔 Aloo cheel raha hu...",
+    "🥗 Dhaniya dhoond raha hu (mil nahi raha)...",
+    "📞 Mummy se recipe confirm kar raha hu...",
+    "💨 Kuukar ki 3 siti ka wait kar raha hu...",
+    "🌶️ Mirchi thodi zyada ho gayi, adjust kar raha hu..."
 ];
 
 const RecipeHub = () => {
@@ -35,7 +50,7 @@ const RecipeHub = () => {
   const [selectedRecipe, setSelectedRecipe] = useState<any | null>(null);
 
   useEffect(() => {
-    const interval = setInterval(() => setCurrentFact((p) => (p + 1) % FOOD_FACTS.length), 5000);
+    const interval = setInterval(() => setCurrentFact((p) => (p + 1) % FOOD_FACTS.length), 4000);
     return () => clearInterval(interval);
   }, []);
 
@@ -46,7 +61,7 @@ const RecipeHub = () => {
         interval = setInterval(() => {
             setStatusMsg(LOADING_JOKES[i % LOADING_JOKES.length]);
             i++;
-        }, 1500);
+        }, 2000);
     }
     return () => clearInterval(interval);
   }, [loading]);
@@ -177,9 +192,9 @@ const RecipeHub = () => {
           initial={{ opacity: 0, scale: 0.9, rotate: -1 }} 
           animate={{ opacity: 1, scale: 1, rotate: -1 }}
           className="max-w-xl mx-auto mt-8 bg-yellow-100 border-4 border-black rounded-none rotate-1 p-8 text-center shadow-[8px_8px_0px_0px_rgba(0,0,0,1)] relative z-10"
-          style={{clipPath: "polygon(0% 0%, 100% 2%, 98% 100%, 2% 98%)"}} // Slightly rough edges
+          style={{clipPath: "polygon(0% 0%, 100% 2%, 98% 100%, 2% 98%)"}} 
         >
-          <div className="absolute -top-4 left-[45%] bg-red-500 w-4 h-12 border-2 border-black"></div> {/* Tape look */}
+          <div className="absolute -top-4 left-[45%] bg-red-500 w-4 h-12 border-2 border-black"></div> 
           <Lightbulb className="mx-auto mb-4 text-orange-500 w-10 h-10" />
           <h3 className="font-black text-gray-500 uppercase tracking-widest mb-2 text-sm">Kya aapko pata hai?</h3>
           <p className="font-black text-2xl leading-tight">"{FOOD_FACTS[currentFact]}"</p>
@@ -199,9 +214,10 @@ const RecipeHub = () => {
           >
             <div className="h-48 overflow-hidden border-b-4 border-black bg-gray-100 relative group">
               <img 
-                src={`https://image.pollinations.ai/prompt/delicious ${recipe.title} indian food style photorealistic 4k?nologo=true`} 
+                src={`https://image.pollinations.ai/prompt/${encodeURIComponent(`delicious ${recipe.title} indian food style photorealistic 4k`)}?nologo=true`} 
                 alt={recipe.title}
                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop"; }}
               />
               <div className="absolute inset-0 bg-black/20 group-hover:bg-transparent transition-colors"></div>
             </div>
@@ -241,8 +257,9 @@ const RecipeHub = () => {
               <div className="p-0">
                  <div className="h-40 w-full overflow-hidden border-b-4 border-black relative">
                      <img 
-                        src={`https://image.pollinations.ai/prompt/delicious ${selectedRecipe.title} indian food closeup?nologo=true`} 
+                        src={`https://image.pollinations.ai/prompt/${encodeURIComponent(`delicious ${selectedRecipe.title} indian food closeup`)}?nologo=true`} 
                         className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.src = "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?q=80&w=800&auto=format&fit=crop"; }}
                      />
                      <div className="absolute bottom-0 left-0 bg-black/60 backdrop-blur-sm p-4 w-full">
                         <h2 className="text-3xl font-black text-white">{selectedRecipe.title}</h2>

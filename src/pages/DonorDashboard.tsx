@@ -20,7 +20,7 @@ let DefaultIcon = L.icon({
 });
 L.Marker.prototype.options.icon = DefaultIcon;
 
-const API_KEY = "import.meta.env.VITE_GEMINI_API_KEY";
+const API_KEY = "YOUR_API_KEY_HERE";
 const DonorDashboard = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);

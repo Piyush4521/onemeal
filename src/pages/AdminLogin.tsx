@@ -4,27 +4,41 @@ import { ShieldCheck } from 'lucide-react';
 import { NeoButton } from '../components/ui/NeoButton';
 import toast from 'react-hot-toast';
 import { auth } from '../firebase'; 
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signOut } from 'firebase/auth'; 
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState(''); 
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-
+  const OWNER_EMAIL ="missiononemeal@gmail.com";
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      
-      localStorage.setItem('isAdmin', 'true'); 
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      if (user.email !== OWNER_EMAIL) {
+        await signOut(auth);
+        toast.error("Access Denied! You are not the Owner. 🚫");
+        setLoading(false);
+        return; 
+      }
+            localStorage.setItem('isAdmin', 'true'); 
       toast.success("Welcome, Boss! 👑");
       navigate('/admin-dashboard');
+
     } catch (error: any) {
       console.error("Login Error:", error);
-      toast.error("Invalid Credentials or Network Error! 🚨");
+      
+      if (error.code === 'auth/user-not-found') {
+        toast.error("User does not exist!");
+      } else if (error.code === 'auth/wrong-password') {
+        toast.error("Wrong Password!");
+      } else {
+        toast.error("Login Failed: " + error.message);
+      }
     } finally {
       setLoading(false);
     }
@@ -55,7 +69,7 @@ const AdminLogin = () => {
                 onChange={(e) => setPassword(e.target.value)}
             />
             <NeoButton className="w-full mt-4" disabled={loading}>
-              {loading ? "Unlocking..." : "Unlock Dashboard"}
+              {loading ? "Verifying..." : "Unlock Dashboard"}
             </NeoButton>
         </form>
       </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { db } from '../firebase';
 import { collection, onSnapshot, doc, updateDoc, setDoc } from 'firebase/firestore';
-import { Users, Megaphone, Ban, CheckCircle, LogOut, Package, MapPin, Activity, TrendingUp, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Users, Megaphone, Ban, CheckCircle, LogOut, Package, MapPin, Activity, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { NeoButton } from '../components/ui/NeoButton';
 import toast from 'react-hot-toast';
@@ -55,11 +55,6 @@ const AdminDashboard = () => {
       }
   };
 
-  const renderLocation = (loc: any) => {
-    if (!loc) return "Unknown";
-    if (typeof loc === 'string') return loc;
-    return "📍 GPS Location"; 
-  };
 
   const bannedCount = users.filter(u => u.banned).length;
   const activeDonations = donations.filter(d => d?.status?.toLowerCase() === 'pending').length;
@@ -87,7 +82,7 @@ const AdminDashboard = () => {
         <div className="bg-white border-4 border-dark rounded-2xl p-6 shadow-neo mb-8 flex justify-between items-center relative overflow-hidden">
             <div className="z-10">
                 <h1 className="text-4xl font-black uppercase italic">👑 Command Center</h1>
-                <p className="text-gray-600 font-bold">Welcome back, Admin. System is ready.</p>
+                <p className="text-gray-600 font-bold">Welcome back, Malik. Sab ready hai.</p>
             </div>
             <NeoButton onClick={() => { localStorage.removeItem('isAdmin'); navigate('/'); }} variant="danger" className="text-sm z-10">
                 <LogOut size={16} /> Logout
